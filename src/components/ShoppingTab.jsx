@@ -1,22 +1,25 @@
-import { useState } from 'react'
-import { IconBtn, Icons, Btn } from './UI'
-import ItemForm from './ItemForm'
+import { useState } from "react";
+import { IconBtn, Icons, Btn } from "./UI";
+import ItemForm from "./ItemForm";
 
 function ShoppingRow({ item, onToggle, onRemove, onMoveToInventory }) {
   return (
-    <div className={`group flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all
-      ${item.done
-        ? 'border-white/3 bg-white/2 opacity-50'
-        : 'border-white/5 bg-white/3 hover:bg-white/5'
+    <div
+      className={`group flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all
+      ${
+        item.done
+          ? "border-white/3 bg-white/2 opacity-50"
+          : "border-white/5 bg-white/3 hover:bg-white/5"
       }`}
     >
       {/* Checkbox */}
       <button
         onClick={() => onToggle(item.id)}
         className={`flex-shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all
-          ${item.done
-            ? 'bg-jade-500 border-jade-500'
-            : 'border-white/20 hover:border-mist-400/50'
+          ${
+            item.done
+              ? "bg-jade-500 border-jade-500"
+              : "border-white/20 hover:border-mist-400/50"
           }`}
       >
         {item.done && <Icons.Check />}
@@ -24,14 +27,16 @@ function ShoppingRow({ item, onToggle, onRemove, onMoveToInventory }) {
 
       {/* Name + qty */}
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium truncate transition-all
-          ${item.done ? 'line-through text-mist-400/40' : 'text-mist-100'}`}
+        <p
+          className={`text-sm font-medium truncate transition-all
+          ${item.done ? "line-through text-mist-400/40" : "text-mist-100"}`}
         >
           {item.name}
         </p>
         {(item.quantity > 1 || item.unit) && (
           <p className="text-xs font-mono text-mist-400/50 mt-0.5">
-            {item.quantity}{item.unit ? ` ${item.unit}` : ''}
+            {item.quantity}
+            {item.unit ? ` ${item.unit}` : ""}
           </p>
         )}
       </div>
@@ -56,22 +61,28 @@ function ShoppingRow({ item, onToggle, onRemove, onMoveToInventory }) {
         </IconBtn>
       </div>
     </div>
-  )
+  );
 }
 
-export default function ShoppingTab({ items, onAdd, onToggle, onRemove, onMoveToInventory }) {
-  const [showForm, setShowForm] = useState(false)
+export default function ShoppingTab({
+  items,
+  onAdd,
+  onToggle,
+  onRemove,
+  onMoveToInventory,
+}) {
+  const [showForm, setShowForm] = useState(false);
 
-  const pending   = items.filter((i) => !i.done)
-  const completed = items.filter((i) => i.done)
+  const pending = items.filter((i) => !i.done);
+  const completed = items.filter((i) => i.done);
 
   function handleAdd(data) {
-    onAdd(data)
-    setShowForm(false)
+    onAdd(data);
+    setShowForm(false);
   }
 
   function clearDone() {
-    completed.forEach((i) => onRemove(i.id))
+    completed.forEach((i) => onRemove(i.id));
   }
 
   return (
@@ -103,7 +114,9 @@ export default function ShoppingTab({ items, onAdd, onToggle, onRemove, onMoveTo
       {items.length > 0 && (
         <div>
           <div className="flex justify-between text-xs font-mono text-mist-400/50 mb-1.5">
-            <span>{completed.length}/{items.length} הושלמו</span>
+            <span>
+              {completed.length}/{items.length} הושלמו
+            </span>
             {completed.length > 0 && (
               <button
                 onClick={clearDone}
@@ -116,7 +129,9 @@ export default function ShoppingTab({ items, onAdd, onToggle, onRemove, onMoveTo
           <div className="h-1 bg-white/5 rounded-full overflow-hidden">
             <div
               className="h-full bg-jade-500 rounded-full transition-all duration-500"
-              style={{ width: `${items.length ? (completed.length / items.length) * 100 : 0}%` }}
+              style={{
+                width: `${items.length ? (completed.length / items.length) * 100 : 0}%`,
+              }}
             />
           </div>
         </div>
@@ -157,5 +172,5 @@ export default function ShoppingTab({ items, onAdd, onToggle, onRemove, onMoveTo
         </div>
       )}
     </div>
-  )
+  );
 }

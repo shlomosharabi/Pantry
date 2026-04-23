@@ -1,45 +1,57 @@
-import { useState } from 'react'
-import { expiryStatus } from '../hooks/useStorage'
-import { Badge, IconBtn, Icons } from './UI'
-import ItemForm from './ItemForm'
+import { useState } from "react";
+import { expiryStatus } from "../hooks/useStorage";
+import { Badge, IconBtn, Icons } from "./UI";
+import ItemForm from "./ItemForm";
 
 function expiryLabel(expiresAt) {
-  if (!expiresAt) return null
-  const status = expiryStatus(expiresAt)
-  const date = new Date(expiresAt)
-  const label = date.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })
-  if (status === 'expired') return <Badge variant="danger">פג {label}</Badge>
-  if (status === 'soon')    return <Badge variant="warn">פג {label}</Badge>
-  return <Badge variant="ok">פג {label}</Badge>
+  if (!expiresAt) return null;
+  const status = expiryStatus(expiresAt);
+  const date = new Date(expiresAt);
+  const label = date.toLocaleDateString("he-IL", {
+    day: "numeric",
+    month: "short",
+  });
+  if (status === "expired") return <Badge variant="danger">פג {label}</Badge>;
+  if (status === "soon") return <Badge variant="warn">פג {label}</Badge>;
+  return <Badge variant="ok">פג {label}</Badge>;
 }
 
 function InventoryRow({ item, onEdit, onDelete }) {
-  const status = expiryStatus(item.expiresAt)
-  const isUrgent = status === 'expired' || status === 'soon'
+  const status = expiryStatus(item.expiresAt);
+  const isUrgent = status === "expired" || status === "soon";
 
   return (
-    <div className={`group flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all
-      ${isUrgent
-        ? 'border-amber-500/30 bg-amber-500/5'
-        : 'border-white/5 bg-white/3 hover:bg-white/5'
+    <div
+      className={`group flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all
+      ${
+        isUrgent
+          ? "border-amber-500/30 bg-amber-500/5"
+          : "border-white/5 bg-white/3 hover:bg-white/5"
       }`}
     >
       {/* Qty pill */}
-      <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex flex-col items-center justify-center
-        ${isUrgent ? 'bg-amber-500/15' : 'bg-mist-500/10'}`}
+      <div
+        className={`flex-shrink-0 w-10 h-10 rounded-xl flex flex-col items-center justify-center
+        ${isUrgent ? "bg-amber-500/15" : "bg-mist-500/10"}`}
       >
-        <span className={`text-sm font-mono font-semibold leading-none
-          ${isUrgent ? 'text-amber-400' : 'text-mist-400'}`}>
+        <span
+          className={`text-sm font-mono font-semibold leading-none
+          ${isUrgent ? "text-amber-400" : "text-mist-400"}`}
+        >
           {item.quantity}
         </span>
         {item.unit && (
-          <span className="text-[9px] font-mono text-mist-400/50 mt-0.5">{item.unit}</span>
+          <span className="text-[9px] font-mono text-mist-400/50 mt-0.5">
+            {item.unit}
+          </span>
         )}
       </div>
 
       {/* Name + expiry */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-mist-100 font-medium truncate">{item.name}</p>
+        <p className="text-sm text-mist-100 font-medium truncate">
+          {item.name}
+        </p>
         <div className="mt-0.5">{expiryLabel(item.expiresAt)}</div>
       </div>
 
@@ -48,37 +60,41 @@ function InventoryRow({ item, onEdit, onDelete }) {
         <IconBtn onClick={() => onEdit(item)} title="ערוך">
           <Icons.Edit />
         </IconBtn>
-        <IconBtn onClick={() => onDelete(item.id)} title="מחק" className="hover:text-rose-400!">
+        <IconBtn
+          onClick={() => onDelete(item.id)}
+          title="מחק"
+          className="hover:text-rose-400!"
+        >
           <Icons.Trash />
         </IconBtn>
       </div>
     </div>
-  )
+  );
 }
 
 export default function InventoryTab({ items, onAdd, onUpdate, onDelete }) {
-  const [showForm, setShowForm] = useState(false)
-  const [editing, setEditing]   = useState(null)
-  const [search, setSearch]     = useState('')
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [search, setSearch] = useState("");
 
   const filtered = items.filter((it) =>
-    it.name.toLowerCase().includes(search.toLowerCase())
-  )
+    it.name.toLowerCase().includes(search.toLowerCase()),
+  );
 
   // Sort: expired → expiring soon → ok → no expiry
   const sorted = [...filtered].sort((a, b) => {
-    const order = { expired: 0, soon: 1, ok: 2, none: 3 }
-    return order[expiryStatus(a.expiresAt)] - order[expiryStatus(b.expiresAt)]
-  })
+    const order = { expired: 0, soon: 1, ok: 2, none: 3 };
+    return order[expiryStatus(a.expiresAt)] - order[expiryStatus(b.expiresAt)];
+  });
 
   function handleAdd(data) {
-    onAdd(data)
-    setShowForm(false)
+    onAdd(data);
+    setShowForm(false);
   }
 
   function handleUpdate(data) {
-    onUpdate(editing.id, data)
-    setEditing(null)
+    onUpdate(editing.id, data);
+    setEditing(null);
   }
 
   return (
@@ -138,14 +154,23 @@ export default function InventoryTab({ items, onAdd, onUpdate, onDelete }) {
       {items.length > 0 && (
         <div className="flex gap-3 text-xs font-mono text-mist-400/50">
           <span>{items.length} פריטים</span>
-          {items.filter(i => expiryStatus(i.expiresAt) === 'soon').length > 0 && (
+          {items.filter((i) => expiryStatus(i.expiresAt) === "soon").length >
+            0 && (
             <span className="text-amber-400/70">
-              · {items.filter(i => expiryStatus(i.expiresAt) === 'soon').length} פגים בקרוב
+              ·{" "}
+              {items.filter((i) => expiryStatus(i.expiresAt) === "soon").length}{" "}
+              פגים בקרוב
             </span>
           )}
-          {items.filter(i => expiryStatus(i.expiresAt) === 'expired').length > 0 && (
+          {items.filter((i) => expiryStatus(i.expiresAt) === "expired").length >
+            0 && (
             <span className="text-rose-400/70">
-              · {items.filter(i => expiryStatus(i.expiresAt) === 'expired').length} פגו
+              ·{" "}
+              {
+                items.filter((i) => expiryStatus(i.expiresAt) === "expired")
+                  .length
+              }{" "}
+              פגו
             </span>
           )}
         </div>
@@ -157,7 +182,7 @@ export default function InventoryTab({ items, onAdd, onUpdate, onDelete }) {
           <div className="text-center py-12 text-mist-400/40">
             <p className="text-4xl mb-3">🥫</p>
             <p className="text-sm font-mono">
-              {search ? 'לא נמצאו פריטים התואמים לחיפוש' : 'המלאי שלך ריק'}
+              {search ? "לא נמצאו פריטים התואמים לחיפוש" : "המלאי שלך ריק"}
             </p>
           </div>
         ) : (
@@ -172,5 +197,5 @@ export default function InventoryTab({ items, onAdd, onUpdate, onDelete }) {
         )}
       </div>
     </div>
-  )
+  );
 }

@@ -1,7 +1,19 @@
-import { useState, useEffect } from 'react'
-import { Input, Select, Btn } from './UI'
+import { useState, useEffect } from "react";
+import { Input, Select, Btn } from "./UI";
 
-const UNITS = ['', 'יח', 'ק"ג', 'גרם', 'ליטר', 'מ"ל', 'קופסה', 'שקית', 'בקבוק', 'פחית', 'חבילה']
+const UNITS = [
+  "",
+  "יח",
+  'ק"ג',
+  "גרם",
+  "ליטר",
+  'מ"ל',
+  "קופסה",
+  "שקית",
+  "בקבוק",
+  "פחית",
+  "חבילה",
+];
 
 /**
  * Generic form for both Inventory and Shopping items.
@@ -11,32 +23,42 @@ const UNITS = ['', 'יח', 'ק"ג', 'גרם', 'ליטר', 'מ"ל', 'קופסה',
  *   onSubmit: (data) => void
  *   onCancel: () => void
  */
-export default function ItemForm({ mode = 'shopping', initial = null, onSubmit, onCancel }) {
-  const [name, setName]       = useState(initial?.name ?? '')
-  const [qty, setQty]         = useState(initial?.quantity ?? 1)
-  const [unit, setUnit]       = useState(initial?.unit ?? '')
-  const [expires, setExpires] = useState(initial?.expiresAt?.slice(0, 10) ?? '')
+export default function ItemForm({
+  mode = "shopping",
+  initial = null,
+  onSubmit,
+  onCancel,
+}) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [qty, setQty] = useState(initial?.quantity ?? 1);
+  const [unit, setUnit] = useState(initial?.unit ?? "");
+  const [expires, setExpires] = useState(
+    initial?.expiresAt?.slice(0, 10) ?? "",
+  );
 
   useEffect(() => {
     if (initial) {
-      setName(initial.name)
-      setQty(initial.quantity)
-      setUnit(initial.unit ?? '')
-      setExpires(initial.expiresAt?.slice(0, 10) ?? '')
+      setName(initial.name);
+      setQty(initial.quantity);
+      setUnit(initial.unit ?? "");
+      setExpires(initial.expiresAt?.slice(0, 10) ?? "");
     }
-  }, [initial])
+  }, [initial]);
 
   function handleSubmit(e) {
-    e.preventDefault()
-    if (!name.trim()) return
+    e.preventDefault();
+    if (!name.trim()) return;
     onSubmit({
       name: name.trim(),
       quantity: Number(qty) || 1,
       unit,
-      ...(mode === 'inventory' ? { expiresAt: expires || null } : {}),
-    })
+      ...(mode === "inventory" ? { expiresAt: expires || null } : {}),
+    });
     if (!initial) {
-      setName(''); setQty(1); setUnit(''); setExpires('')
+      setName("");
+      setQty(1);
+      setUnit("");
+      setExpires("");
     }
   }
 
@@ -69,15 +91,19 @@ export default function ItemForm({ mode = 'shopping', initial = null, onSubmit, 
           className="flex-1"
         >
           {UNITS.map((u) => (
-            <option key={u} value={u}>{u === '' ? '— יחידה —' : u}</option>
+            <option key={u} value={u}>
+              {u === "" ? "— יחידה —" : u}
+            </option>
           ))}
         </Select>
       </div>
 
       {/* Expiry — inventory only */}
-      {mode === 'inventory' && (
+      {mode === "inventory" && (
         <div>
-          <label className="text-xs text-mist-400/60 mb-1 block font-mono">פג תוקף (אופציונלי)</label>
+          <label className="text-xs text-mist-400/60 mb-1 block font-mono">
+            פג תוקף (אופציונלי)
+          </label>
           <Input
             type="date"
             value={expires}
@@ -89,14 +115,19 @@ export default function ItemForm({ mode = 'shopping', initial = null, onSubmit, 
 
       <div className="flex gap-2 pt-1">
         {onCancel && (
-          <Btn type="button" variant="ghost" onClick={onCancel} className="flex-1">
+          <Btn
+            type="button"
+            variant="ghost"
+            onClick={onCancel}
+            className="flex-1"
+          >
             ביטול
           </Btn>
         )}
         <Btn type="submit" variant="primary" className="flex-1">
-          {initial ? 'שמור שינויים' : 'הוסף פריט'}
+          {initial ? "שמור שינויים" : "הוסף פריט"}
         </Btn>
       </div>
     </form>
-  )
+  );
 }
