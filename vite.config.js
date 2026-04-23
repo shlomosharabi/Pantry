@@ -4,7 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   // Change 'pantry-pwa' to your GitHub repo name
-  base: '/pantry-pwa/',
+  base: '/Pantry/',
   plugins: [
     react(),
     VitePWA({
@@ -18,8 +18,8 @@ export default defineConfig({
         background_color: '#1a1a2e',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/pantry-pwa/',
-        start_url: '/pantry-pwa/',
+        scope: '/Pantry/',
+        start_url: '/Pantry/',
         icons: [
           {
             src: 'icons/icon-192.png',
