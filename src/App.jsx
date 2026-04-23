@@ -4,8 +4,8 @@ import InventoryTab from './components/InventoryTab'
 import ShoppingTab from './components/ShoppingTab'
 
 const TABS = [
-  { id: 'inventory', label: 'Inventory', emoji: '🏠' },
-  { id: 'shopping',  label: 'Shopping',  emoji: '🛒' },
+  { id: 'inventory', label: 'מלאי', emoji: '🏠' },
+  { id: 'shopping',  label: 'קניות',  emoji: '🛒' },
 ]
 
 function AlertBanner({ items }) {
@@ -20,9 +20,9 @@ function AlertBanner({ items }) {
   return (
     <div className="mx-4 mb-3 px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/20">
       <p className="text-xs font-mono text-amber-400/80">
-        {expired.length > 0 && `${expired.length} item${expired.length > 1 ? 's' : ''} expired`}
+        {expired.length > 0 && `${expired.length} פריט${expired.length > 1 ? 'ים' : ''} פג תוקף`}
         {expired.length > 0 && soon.length > 0 && ' · '}
-        {soon.length > 0 && `${soon.length} expiring within 3 days`}
+        {soon.length > 0 && `${soon.length} פגים תוקף תוך 3 ימים`}
       </p>
       <p className="text-xs text-amber-400/50 mt-0.5">
         {urgent.map((i) => i.name).join(', ')}
@@ -55,13 +55,13 @@ export default function App() {
       <header className="sticky top-0 z-40 px-4 pt-safe-top">
         <div className="flex items-center justify-between py-4">
           <div>
-            <h1 className="text-xl font-semibold tracking-tight">Pantry</h1>
+            <h1 className="text-xl font-semibold tracking-tight">מזווה</h1>
             <p className="text-xs font-mono text-mist-400/50 -mt-0.5">
-              {inv.items.length} items · {shop.items.filter(i => !i.done).length} to buy
+              {inv.items.length} פריטים · {shop.items.filter(i => !i.done).length} לקנות
             </p>
           </div>
           {/* Offline indicator – shown only if SW is present */}
-          <div className="w-2 h-2 rounded-full bg-jade-500 shadow-[0_0_8px_2px_rgba(34,197,94,0.4)]" title="Ready for offline use" />
+          <div className="w-2 h-2 rounded-full bg-jade-500 shadow-[0_0_8px_2px_rgba(34,197,94,0.4)]" title="מוכן לשימוש לא מקוון" />
         </div>
 
         {/* Tabs */}

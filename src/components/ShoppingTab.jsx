@@ -41,7 +41,7 @@ function ShoppingRow({ item, onToggle, onRemove, onMoveToInventory }) {
         {!item.done && (
           <IconBtn
             onClick={() => onMoveToInventory(item.id)}
-            title="Move to inventory"
+            title="העבר למלאי"
             className="hover:text-jade-400!"
           >
             <Icons.MoveUp />
@@ -49,7 +49,7 @@ function ShoppingRow({ item, onToggle, onRemove, onMoveToInventory }) {
         )}
         <IconBtn
           onClick={() => onRemove(item.id)}
-          title="Remove"
+          title="הסר"
           className="hover:text-rose-400!"
         >
           <Icons.Trash />
@@ -79,7 +79,7 @@ export default function ShoppingTab({ items, onAdd, onToggle, onRemove, onMoveTo
       {/* Add form */}
       {showForm ? (
         <div className="bg-white/4 border border-white/10 rounded-2xl p-4">
-          <p className="text-xs font-mono text-mist-400/60 mb-3">ADD TO LIST</p>
+          <p className="text-xs font-mono text-mist-400/60 mb-3">הוסף לרשימה</p>
           <ItemForm
             mode="shopping"
             onSubmit={handleAdd}
@@ -95,7 +95,7 @@ export default function ShoppingTab({ items, onAdd, onToggle, onRemove, onMoveTo
             transition-all active:scale-98"
         >
           <Icons.Plus />
-          Add to list
+          הוסף לרשימה
         </button>
       )}
 
@@ -103,13 +103,13 @@ export default function ShoppingTab({ items, onAdd, onToggle, onRemove, onMoveTo
       {items.length > 0 && (
         <div>
           <div className="flex justify-between text-xs font-mono text-mist-400/50 mb-1.5">
-            <span>{completed.length}/{items.length} done</span>
+            <span>{completed.length}/{items.length} הושלמו</span>
             {completed.length > 0 && (
               <button
                 onClick={clearDone}
                 className="text-rose-400/60 hover:text-rose-400 transition-colors"
               >
-                clear done
+                נקה הושלמו
               </button>
             )}
           </div>
@@ -127,7 +127,7 @@ export default function ShoppingTab({ items, onAdd, onToggle, onRemove, onMoveTo
         {pending.length === 0 && completed.length === 0 && (
           <div className="text-center py-12 text-mist-400/40">
             <p className="text-4xl mb-3">🛒</p>
-            <p className="text-sm font-mono">Your shopping list is empty</p>
+            <p className="text-sm font-mono">רשימת הקניות שלך ריקה</p>
           </div>
         )}
         {pending.map((item) => (
@@ -144,7 +144,7 @@ export default function ShoppingTab({ items, onAdd, onToggle, onRemove, onMoveTo
       {/* Completed section */}
       {completed.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-mono text-mist-400/40 px-1">COMPLETED</p>
+          <p className="text-xs font-mono text-mist-400/40 px-1">הושלמו</p>
           {completed.map((item) => (
             <ShoppingRow
               key={item.id}

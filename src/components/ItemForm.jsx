@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Input, Select, Btn } from './UI'
 
-const UNITS = ['', 'pcs', 'kg', 'g', 'L', 'ml', 'box', 'bag', 'bottle', 'can', 'pack']
+const UNITS = ['', 'יח', 'ק"ג', 'גרם', 'ליטר', 'מ"ל', 'קופסה', 'שקית', 'בקבוק', 'פחית', 'חבילה']
 
 /**
  * Generic form for both Inventory and Shopping items.
@@ -44,7 +44,7 @@ export default function ItemForm({ mode = 'shopping', initial = null, onSubmit, 
     <form onSubmit={handleSubmit} className="space-y-3">
       {/* Name */}
       <Input
-        placeholder="Item name…"
+        placeholder="שם הפריט…"
         value={name}
         onChange={(e) => setName(e.target.value)}
         autoFocus
@@ -60,7 +60,7 @@ export default function ItemForm({ mode = 'shopping', initial = null, onSubmit, 
           value={qty}
           onChange={(e) => setQty(e.target.value)}
           className="w-20 flex-shrink-0"
-          placeholder="Qty"
+          placeholder="כמות"
         />
         {/* Unit */}
         <Select
@@ -69,7 +69,7 @@ export default function ItemForm({ mode = 'shopping', initial = null, onSubmit, 
           className="flex-1"
         >
           {UNITS.map((u) => (
-            <option key={u} value={u}>{u === '' ? '— unit —' : u}</option>
+            <option key={u} value={u}>{u === '' ? '— יחידה —' : u}</option>
           ))}
         </Select>
       </div>
@@ -77,7 +77,7 @@ export default function ItemForm({ mode = 'shopping', initial = null, onSubmit, 
       {/* Expiry — inventory only */}
       {mode === 'inventory' && (
         <div>
-          <label className="text-xs text-mist-400/60 mb-1 block font-mono">Expires (optional)</label>
+          <label className="text-xs text-mist-400/60 mb-1 block font-mono">פג תוקף (אופציונלי)</label>
           <Input
             type="date"
             value={expires}
@@ -90,11 +90,11 @@ export default function ItemForm({ mode = 'shopping', initial = null, onSubmit, 
       <div className="flex gap-2 pt-1">
         {onCancel && (
           <Btn type="button" variant="ghost" onClick={onCancel} className="flex-1">
-            Cancel
+            ביטול
           </Btn>
         )}
         <Btn type="submit" variant="primary" className="flex-1">
-          {initial ? 'Save changes' : 'Add item'}
+          {initial ? 'שמור שינויים' : 'הוסף פריט'}
         </Btn>
       </div>
     </form>
