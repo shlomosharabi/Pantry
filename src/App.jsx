@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useInventory, useShopping, expiryStatus } from "./hooks/useStorage";
+import { useInventory, useShopping, useAuth, expiryStatus } from "./hooks/useStorage";
 import InventoryTab from "./components/InventoryTab";
 import ShoppingTab from "./components/ShoppingTab";
 
@@ -32,10 +32,23 @@ function AlertBanner({ items }) {
   );
 }
 
+function LoadingSpinner() {
+  return (
+    <div className="min-h-screen bg-ink-900 text-mist-100 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-mist-400"></div>
+    </div>
+  );
+}
+
 export default function App() {
+  const auth = useAuth();
   const [tab, setTab] = useState("inventory");
   const inv = useInventory();
   const shop = useShopping();
+
+  if (auth.loading) {
+    return <LoadingSpinner />;
+  }
 
   // Move shopping item → inventory
   function handleMoveToInventory(id) {
@@ -107,6 +120,7 @@ export default function App() {
             onAdd={inv.addItem}
             onUpdate={inv.updateItem}
             onDelete={inv.deleteItem}
+            loading={inv.loading}
           />
         ) : (
           <ShoppingTab
@@ -115,6 +129,7 @@ export default function App() {
             onToggle={shop.toggleDone}
             onRemove={shop.removeItem}
             onMoveToInventory={handleMoveToInventory}
+            loading={shop.loading}
           />
         )}
       </main>

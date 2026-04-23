@@ -1,9 +1,9 @@
 /**
- * useStorage — thin LocalStorage adapter
+ * useStorage — Firebase Firestore + Auth adapter
  *
  * Data model:
- *   pantry_inventory: InventoryItem[]
- *   pantry_shopping:  ShoppingItem[]
+ *   users/{uid}/inventory: InventoryItem[]
+ *   users/{uid}/shopping:  ShoppingItem[]
  *
  * InventoryItem {
  *   id:         string   (uuid)
@@ -25,95 +25,180 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-
-const KEYS = {
-  inventory: 'pantry_inventory',
-  shopping: 'pantry_shopping',
-}
-
-function load(key) {
-  try {
-    const raw = localStorage.getItem(key)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
-
-function save(key, data) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data))
-  } catch (e) {
-    console.warn('Storage write failed', e)
-  }
-}
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore'
+import { onAuthStateChanged, signInAnonymously } from 'firebase/auth'
+import { db, auth } from '../firebase'
 
 function uid() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+export function useAuth() {
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user)
+      } else {
+        // Sign in anonymously if no user
+        signInAnonymously(auth).catch((error) => {
+          console.error('Anonymous sign-in failed:', error)
+        })
+      }
+      setLoading(false)
+    })
+
+    return unsubscribe
+  }, [])
+
+  return { user, loading }
+}
+
 // ─── Inventory ───────────────────────────────────────────────────────────────
 
 export function useInventory() {
-  const [items, setItems] = useState(() => load(KEYS.inventory))
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
 
-  const persist = useCallback((next) => {
-    setItems(next)
-    save(KEYS.inventory, next)
-  }, [])
+  useEffect(() => {
+    if (!user) return
 
-  const addItem = useCallback(({ name, quantity = 1, unit = '', expiresAt = null }) => {
-    const item = { id: uid(), name: name.trim(), quantity, unit, expiresAt, addedAt: new Date().toISOString() }
-    persist((prev) => [item, ...prev])
-    return item
-  }, [persist])
+    const unsubscribe = onSnapshot(
+      collection(db, 'users', user.uid, 'inventory'),
+      (snapshot) => {
+        const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+        setItems(data)
+        setLoading(false)
+      },
+      (error) => {
+        console.error('Error fetching inventory:', error)
+        setLoading(false)
+      }
+    )
 
-  const updateItem = useCallback((id, patch) => {
-    persist((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)))
-  }, [persist])
+    return unsubscribe
+  }, [user])
 
-  const deleteItem = useCallback((id) => {
-    persist((prev) => prev.filter((it) => it.id !== id))
-  }, [persist])
+  const addItem = useCallback(async ({ name, quantity = 1, unit = '', expiresAt = null }) => {
+    if (!user) return null
 
-  return { items, addItem, updateItem, deleteItem }
+    const item = { name: name.trim(), quantity, unit, expiresAt, addedAt: new Date().toISOString() }
+    try {
+      const docRef = await addDoc(collection(db, 'users', user.uid, 'inventory'), item)
+      return { id: docRef.id, ...item }
+    } catch (error) {
+      console.error('Error adding inventory item:', error)
+      return null
+    }
+  }, [user])
+
+  const updateItem = useCallback(async (id, patch) => {
+    if (!user) return
+
+    try {
+      await updateDoc(doc(db, 'users', user.uid, 'inventory', id), patch)
+    } catch (error) {
+      console.error('Error updating inventory item:', error)
+    }
+  }, [user])
+
+  const deleteItem = useCallback(async (id) => {
+    if (!user) return
+
+    try {
+      await deleteDoc(doc(db, 'users', user.uid, 'inventory', id))
+    } catch (error) {
+      console.error('Error deleting inventory item:', error)
+    }
+  }, [user])
+
+  return { items, addItem, updateItem, deleteItem, loading }
 }
 
 // ─── Shopping ─────────────────────────────────────────────────────────────────
 
 export function useShopping() {
-  const [items, setItems] = useState(() => load(KEYS.shopping))
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
 
-  const persist = useCallback((next) => {
-    setItems(next)
-    save(KEYS.shopping, next)
-  }, [])
+  useEffect(() => {
+    if (!user) return
 
-  const addItem = useCallback(({ name, quantity = 1, unit = '' }) => {
-    const item = { id: uid(), name: name.trim(), quantity, unit, done: false, addedAt: new Date().toISOString() }
-    persist((prev) => [item, ...prev])
-    return item
-  }, [persist])
+    const unsubscribe = onSnapshot(
+      collection(db, 'users', user.uid, 'shopping'),
+      (snapshot) => {
+        const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+        setItems(data)
+        setLoading(false)
+      },
+      (error) => {
+        console.error('Error fetching shopping:', error)
+        setLoading(false)
+      }
+    )
 
-  const toggleDone = useCallback((id) => {
-    persist((prev) => prev.map((it) => (it.id === id ? { ...it, done: !it.done } : it)))
-  }, [persist])
+    return unsubscribe
+  }, [user])
 
-  const removeItem = useCallback((id) => {
-    persist((prev) => prev.filter((it) => it.id !== id))
-  }, [persist])
+  const addItem = useCallback(async ({ name, quantity = 1, unit = '' }) => {
+    if (!user) return null
+
+    const item = { name: name.trim(), quantity, unit, done: false, addedAt: new Date().toISOString() }
+    try {
+      const docRef = await addDoc(collection(db, 'users', user.uid, 'shopping'), item)
+      return { id: docRef.id, ...item }
+    } catch (error) {
+      console.error('Error adding shopping item:', error)
+      return null
+    }
+  }, [user])
+
+  const toggleDone = useCallback(async (id) => {
+    if (!user) return
+
+    const item = items.find((it) => it.id === id)
+    if (!item) return
+
+    try {
+      await updateDoc(doc(db, 'users', user.uid, 'shopping', id), { done: !item.done })
+    } catch (error) {
+      console.error('Error toggling shopping item:', error)
+    }
+  }, [user, items])
+
+  const removeItem = useCallback(async (id) => {
+    if (!user) return
+
+    try {
+      await deleteDoc(doc(db, 'users', user.uid, 'shopping', id))
+    } catch (error) {
+      console.error('Error removing shopping item:', error)
+    }
+  }, [user])
 
   // Returns the raw shopping item so caller can pass it to addInventoryItem
-  const popItem = useCallback((id) => {
-    let found = null
-    persist((prev) => prev.filter((it) => {
-      if (it.id === id) { found = it; return false }
-      return true
-    }))
-    return found
-  }, [persist])
+  const popItem = useCallback(async (id) => {
+    if (!user) return null
 
-  return { items, addItem, toggleDone, removeItem, popItem }
+    const item = items.find((it) => it.id === id)
+    if (!item) return null
+
+    try {
+      await deleteDoc(doc(db, 'users', user.uid, 'shopping', id))
+      return item
+    } catch (error) {
+      console.error('Error popping shopping item:', error)
+      return null
+    }
+  }, [user, items])
+
+  return { items, addItem, toggleDone, removeItem, popItem, loading }
 }
 
 // ─── Expiry helpers ───────────────────────────────────────────────────────────
