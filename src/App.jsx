@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { useInventory, useShopping, useAuth, expiryStatus } from "./hooks/useStorage";
+import {
+  useInventory,
+  useShopping,
+  useAuth,
+  expiryStatus,
+} from "./hooks/useStorage";
 import InventoryTab from "./components/InventoryTab";
 import ShoppingTab from "./components/ShoppingTab";
 
@@ -40,19 +45,119 @@ function LoadingSpinner() {
   );
 }
 
-export default function App() {
-  const auth = useAuth();
-  const [tab, setTab] = useState("inventory");
-  const inv = useInventory();
-  const shop = useShopping();
+function GoogleIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-4 h-4"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+        fill="#4285F4"
+      />
+      <path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+        fill="#34A853"
+      />
+      <path
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+        fill="#EA4335"
+      />
+    </svg>
+  );
+}
 
-  if (auth.loading) {
+function UserMenu({ user, isAnonymous, onSignIn, onSignOut }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 py-1.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all"
+      >
+        {isAnonymous ? (
+          <span className="text-xs font-mono text-mist-400/70">אורח</span>
+        ) : (
+          <>
+            {user.photoURL ? (
+              <img
+                src={user.photoURL}
+                className="w-5 h-5 rounded-full"
+                alt=""
+              />
+            ) : (
+              <div className="w-5 h-5 rounded-full bg-mist-500/30 flex items-center justify-center text-[10px] text-mist-300">
+                {user.displayName?.[0] ?? user.email?.[0]?.toUpperCase() ?? "?"}
+              </div>
+            )}
+            <span className="text-xs font-mono text-mist-300 max-w-[80px] truncate">
+              {user.displayName?.split(" ")[0]}
+            </span>
+          </>
+        )}
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-10 z-50 w-56 bg-ink-800 border border-white/10 rounded-2xl shadow-xl overflow-hidden">
+            {isAnonymous ? (
+              <button
+                onClick={() => {
+                  onSignIn();
+                  setOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-sm text-mist-200 hover:bg-white/5 transition-colors"
+              >
+                <GoogleIcon />
+                התחבר עם Google
+              </button>
+            ) : (
+              <>
+                <div className="px-4 py-3 border-b border-white/5">
+                  <p className="text-xs text-mist-400/60 font-mono">
+                    מחובר בתור
+                  </p>
+                  <p className="text-sm text-mist-200 font-medium truncate mt-0.5">
+                    {user.displayName ?? user.email}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    onSignOut();
+                    setOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-400/80 hover:bg-white/5 transition-colors"
+                >
+                  התנתק
+                </button>
+              </>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default function App() {
+  const authState = useAuth();
+  const [tab, setTab] = useState("inventory");
+  const inv = useInventory(authState.user);
+  const shop = useShopping(authState.user);
+
+  if (authState.loading) {
     return <LoadingSpinner />;
   }
 
-  // Move shopping item → inventory
-  function handleMoveToInventory(id) {
-    const item = shop.popItem(id);
+  async function handleMoveToInventory(id) {
+    const item = await shop.popItem(id);
     if (item) {
       inv.addItem({
         name: item.name,
@@ -63,9 +168,19 @@ export default function App() {
     }
   }
 
+  async function handleMoveToShopping(id) {
+    const item = await inv.popItemToShopping(id);
+    if (item) {
+      shop.addItem({
+        name: item.name,
+        quantity: item.quantity,
+        unit: item.unit,
+      });
+    }
+  }
+
   return (
     <div className="min-h-screen bg-ink-900 text-mist-100 flex flex-col">
-      {/* Header */}
       <header className="sticky top-0 z-40 px-4 pt-safe-top">
         <div className="flex items-center justify-between py-4">
           <div>
@@ -75,14 +190,14 @@ export default function App() {
               {shop.items.filter((i) => !i.done).length} לקנות
             </p>
           </div>
-          {/* Offline indicator – shown only if SW is present */}
-          <div
-            className="w-2 h-2 rounded-full bg-jade-500 shadow-[0_0_8px_2px_rgba(34,197,94,0.4)]"
-            title="מוכן לשימוש לא מקוון"
+          <UserMenu
+            user={authState.user}
+            isAnonymous={authState.isAnonymous}
+            onSignIn={authState.signInWithGoogle}
+            onSignOut={authState.signOut}
           />
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-1 bg-white/4 p-1 rounded-2xl mb-3 border border-white/5">
           {TABS.map((t) => (
             <button
@@ -97,7 +212,6 @@ export default function App() {
             >
               <span>{t.emoji}</span>
               {t.label}
-              {/* Badge for shopping pending */}
               {t.id === "shopping" &&
                 shop.items.filter((i) => !i.done).length > 0 && (
                   <span className="text-[10px] font-mono bg-mist-500/30 text-mist-300 px-1.5 py-0.5 rounded-full">
@@ -109,16 +223,15 @@ export default function App() {
         </div>
       </header>
 
-      {/* Expiry alerts — only on inventory tab */}
       {tab === "inventory" && <AlertBanner items={inv.items} />}
 
-      {/* Content */}
       <main className="flex-1 px-4 pb-8">
         {tab === "inventory" ? (
           <InventoryTab
             items={inv.items}
             onAdd={inv.addItem}
             onUpdate={inv.updateItem}
+            onMoveToShopping={handleMoveToShopping}
             onDelete={inv.deleteItem}
             loading={inv.loading}
           />
