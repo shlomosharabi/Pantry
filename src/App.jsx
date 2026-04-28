@@ -3,10 +3,13 @@ import {
   useInventory,
   useShopping,
   useAuth,
+  useHome,
   expiryStatus,
 } from "./hooks/useStorage";
 import InventoryTab from "./components/InventoryTab";
 import ShoppingTab from "./components/ShoppingTab";
+import HomeScreen from "./components/HomeScreen";
+import HomeMenu from "./components/HomeMenu";
 
 const TABS = [
   { id: "inventory", label: "מלאי", emoji: "🏠" },
@@ -96,7 +99,7 @@ function UserMenu({ user, isAnonymous, onSignIn, onSignOut }) {
                 {user.displayName?.[0] ?? user.email?.[0]?.toUpperCase() ?? "?"}
               </div>
             )}
-            <span className="text-xs font-mono text-mist-300 max-w-[80px] truncate">
+            <span className="text-xs font-mono text-mist-300 max-w-[60px] truncate">
               {user.displayName?.split(" ")[0]}
             </span>
           </>
@@ -106,7 +109,7 @@ function UserMenu({ user, isAnonymous, onSignIn, onSignOut }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-10 z-50 w-56 bg-ink-800 border border-white/10 rounded-2xl shadow-xl overflow-hidden">
+          <div className="absolute left-0 top-10 z-50 w-56 max-w-[calc(100vw-2rem)] bg-ink-800 border border-white/10 rounded-2xl shadow-xl overflow-hidden">
             {isAnonymous ? (
               <button
                 onClick={() => {
@@ -148,12 +151,27 @@ function UserMenu({ user, isAnonymous, onSignIn, onSignOut }) {
 
 export default function App() {
   const authState = useAuth();
+  const homeState = useHome(authState.user);
   const [tab, setTab] = useState("inventory");
-  const inv = useInventory(authState.user);
-  const shop = useShopping(authState.user);
 
-  if (authState.loading) {
+  const activeHomeId = homeState.activeHomeId;
+  const inv = useInventory(authState.user, activeHomeId);
+  const shop = useShopping(authState.user, activeHomeId);
+
+  if (authState.loading || homeState.loading) {
     return <LoadingSpinner />;
+  }
+
+  // משתמש מחובר עם Google אבל אין לו בית — הצג מסך יצירה/הצטרפות
+  if (!authState.isAnonymous && homeState.homes.length === 0) {
+    return (
+      <HomeScreen
+        onCreateHome={homeState.createHome}
+        onJoinHome={homeState.joinHome}
+        onSignIn={authState.signInWithGoogle}
+        isAnonymous={authState.isAnonymous}
+      />
+    );
   }
 
   async function handleMoveToInventory(id) {
@@ -183,13 +201,28 @@ export default function App() {
     <div className="min-h-screen bg-ink-900 text-mist-100 flex flex-col">
       <header className="sticky top-0 z-40 px-4 pt-safe-top">
         <div className="flex items-center justify-between py-4">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight">מזווה</h1>
-            <p className="text-xs font-mono text-mist-400/50 -mt-0.5">
-              {inv.items.length} פריטים ·{" "}
-              {shop.items.filter((i) => !i.done).length} לקנות
-            </p>
-          </div>
+          {/* בחירת בית — רק למשתמשים מחוברים עם Google */}
+          {!authState.isAnonymous ? (
+            <HomeMenu
+              homes={homeState.homes}
+              activeHome={homeState.activeHome}
+              onSwitch={homeState.setActiveHomeId}
+              onCreateHome={homeState.createHome}
+              onJoinHome={homeState.joinHome}
+              onLeave={homeState.leaveHome}
+              onDeleteHome={homeState.deleteHome}
+              user={authState.user}
+            />
+          ) : (
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight">מזווה</h1>
+              <p className="text-xs font-mono text-mist-400/50 -mt-0.5">
+                {inv.items.length} פריטים ·{" "}
+                {shop.items.filter((i) => !i.done).length} לקנות
+              </p>
+            </div>
+          )}
+
           <UserMenu
             user={authState.user}
             isAnonymous={authState.isAnonymous}
@@ -204,11 +237,7 @@ export default function App() {
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all
-                ${
-                  tab === t.id
-                    ? "bg-mist-500/20 text-mist-200 shadow-sm"
-                    : "text-mist-400/60 hover:text-mist-300"
-                }`}
+                ${tab === t.id ? "bg-mist-500/20 text-mist-200 shadow-sm" : "text-mist-400/60 hover:text-mist-300"}`}
             >
               <span>{t.emoji}</span>
               {t.label}
