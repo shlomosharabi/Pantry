@@ -1,5 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "../firebase";
 import { Btn } from "./UI";
+
+function useMembersOf(homeId) {
+  const [members, setMembers] = useState([]);
+
+  useEffect(() => {
+    if (!homeId) return;
+    const unsubscribe = onSnapshot(
+      collection(db, "homes", homeId, "members"),
+      (snap) => setMembers(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    );
+    return unsubscribe;
+  }, [homeId]);
+
+  return members;
+}
 
 export default function HomeMenu({
   homes,
@@ -9,6 +26,7 @@ export default function HomeMenu({
   onJoinHome,
   onLeave,
   onDeleteHome,
+  onRemoveMember,
   user,
 }) {
   const [open, setOpen] = useState(false);
@@ -17,6 +35,9 @@ export default function HomeMenu({
   const [joinCode, setJoinCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const members = useMembersOf(activeHome?.id);
+  const isAdmin = activeHome?.createdBy === user?.uid;
 
   function close() {
     setOpen(false);
@@ -52,7 +73,11 @@ export default function HomeMenu({
     close();
   }
 
-  const isAdmin = activeHome?.createdBy === user?.uid;
+  async function handleRemoveMember(memberId) {
+    setLoading(true);
+    await onRemoveMember(activeHome.id, memberId);
+    setLoading(false);
+  }
 
   return (
     <div className="relative">
@@ -70,7 +95,8 @@ export default function HomeMenu({
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={close} />
-          <div className="absolute left-[-5] top-11 z-50 w-56 bg-ink-800 border border-white/10 rounded-2xl shadow-xl overflow-hidden">
+          <div className="absolute left-[-5] top-11 z-50 w-64 bg-ink-800 border border-white/10 rounded-2xl shadow-xl overflow-hidden">
+            {/* ── רשימת בתים ── */}
             {view === "list" && (
               <>
                 <div className="px-3 py-2 border-b border-white/5">
@@ -78,8 +104,7 @@ export default function HomeMenu({
                     הבתים שלי
                   </p>
                 </div>
-
-                <div className="max-h-48 overflow-y-auto">
+                <div className="max-h-40 overflow-y-auto">
                   {homes.map((home) => (
                     <button
                       key={home.id}
@@ -97,15 +122,22 @@ export default function HomeMenu({
                     </button>
                   ))}
                 </div>
-
                 <div className="border-t border-white/5 p-2 flex flex-col gap-1">
                   {activeHome && (
-                    <button
-                      onClick={() => setView("invite")}
-                      className="w-full text-right px-3 py-2 text-xs text-mist-400 hover:bg-white/5 rounded-lg transition-colors"
-                    >
-                      📋 הצג קוד הזמנה
-                    </button>
+                    <>
+                      <button
+                        onClick={() => setView("invite")}
+                        className="w-full text-right px-3 py-2 text-xs text-mist-400 hover:bg-white/5 rounded-lg transition-colors"
+                      >
+                        📋 הצג קוד הזמנה
+                      </button>
+                      <button
+                        onClick={() => setView("members")}
+                        className="w-full text-right px-3 py-2 text-xs text-mist-400 hover:bg-white/5 rounded-lg transition-colors"
+                      >
+                        👥 חברי הבית ({members.length})
+                      </button>
+                    </>
                   )}
                   <button
                     onClick={() => setView("create")}
@@ -142,6 +174,69 @@ export default function HomeMenu({
               </>
             )}
 
+            {/* ── חברי הבית ── */}
+            {view === "members" && (
+              <div>
+                <div className="px-3 py-2 border-b border-white/5 flex items-center justify-between">
+                  <p className="text-[10px] font-mono text-mist-400/50">
+                    חברי הבית
+                  </p>
+                  <button
+                    onClick={() => setView("list")}
+                    className="text-[10px] text-mist-400/50 hover:text-mist-300"
+                  >
+                    חזור
+                  </button>
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {members.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-white/3"
+                    >
+                      {/* אווטאר */}
+                      <div className="w-7 h-7 rounded-full bg-mist-500/20 flex items-center justify-center text-xs text-mist-300 flex-shrink-0 overflow-hidden">
+                        {member.photoURL ? (
+                          <img
+                            src={member.photoURL}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          (
+                            member.displayName?.[0] ??
+                            member.email?.[0] ??
+                            "?"
+                          ).toUpperCase()
+                        )}
+                      </div>
+                      {/* שם */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-mist-200 truncate">
+                          {member.displayName ?? member.email}
+                        </p>
+                        <p className="text-[10px] font-mono text-mist-400/50">
+                          {member.role === "admin" ? "👑 מנהל" : "חבר"}
+                        </p>
+                      </div>
+                      {/* הסרה — admin בלבד, לא על עצמו */}
+                      {isAdmin && member.id !== user.uid && (
+                        <button
+                          onClick={() => handleRemoveMember(member.id)}
+                          disabled={loading}
+                          className="text-rose-400/50 hover:text-rose-400 transition-colors text-xs px-1"
+                          title="הסר חבר"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── מחיקת בית ── */}
             {view === "delete" && (
               <div className="p-4 space-y-3">
                 <p className="text-xs font-mono text-rose-400/80">מחיקת בית</p>
@@ -175,6 +270,7 @@ export default function HomeMenu({
               </div>
             )}
 
+            {/* ── קוד הזמנה ── */}
             {view === "invite" && (
               <div className="p-4">
                 <p className="text-xs font-mono text-mist-400/60 mb-3">
@@ -198,6 +294,7 @@ export default function HomeMenu({
               </div>
             )}
 
+            {/* ── צור בית ── */}
             {view === "create" && (
               <form onSubmit={handleCreate} className="p-4 space-y-3">
                 <p className="text-xs font-mono text-mist-400/60">בית חדש</p>
@@ -229,6 +326,7 @@ export default function HomeMenu({
               </form>
             )}
 
+            {/* ── הצטרף ── */}
             {view === "join" && (
               <form onSubmit={handleJoin} className="p-4 space-y-3">
                 <p className="text-xs font-mono text-mist-400/60">הצטרף לבית</p>
