@@ -10,6 +10,7 @@ import InventoryTab from "./components/InventoryTab";
 import ShoppingTab from "./components/ShoppingTab";
 import HomeScreen from "./components/HomeScreen";
 import HomeMenu from "./components/HomeMenu";
+import PwaInstallPrompt from "./components/PwaInstallPrompt";
 
 const TABS = [
   { id: "inventory", label: "מלאי", emoji: "🏠" },
@@ -253,6 +254,7 @@ export default function App() {
       </header>
 
       {tab === "inventory" && <AlertBanner items={inv.items} />}
+      <PwaInstallPrompt />
 
       <main className="flex-1 px-4 pb-8">
         {tab === "inventory" ? (
