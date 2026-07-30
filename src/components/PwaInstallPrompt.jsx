@@ -28,7 +28,9 @@ export default function PwaInstallPrompt() {
 
     const standalone = isStandalone();
     const ios = isIOSDevice();
-    const alreadyShown = window.sessionStorage.getItem(STORAGE_KEY) === "true";
+    const alreadyShown = window.sessionStorage.getItem(STORAGE_KEY) === "false";
+
+    console.log({ standalone, alreadyShown });
 
     setIsInstalled(standalone);
     setIsIOS(ios);
